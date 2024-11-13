@@ -1,0 +1,362 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Random Source Selector</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.17.0/xlsx.full.min.js"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            margin: 0;
+            background-color: #f0f0f0;
+        }
+        .container {
+            text-align: center;
+            max-width: 400px;
+            padding: 20px;
+            background-color: #fff;
+            border-radius: 8px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        }
+        #userInputDisplay, #result {
+            font-size: 24px;
+            color: #333;
+            margin: 10px 0;
+        }
+        button {
+            padding: 10px 20px;
+            font-size: 16px;
+            background-color: #28a745;
+            color: #fff;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        button.reset {
+            background-color: #dc3545;
+        }
+        button:disabled {
+            background-color: #cccccc;
+            cursor: not-allowed;
+        }
+        input[type="text"] {
+            padding: 10px;
+            font-size: 16px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            width: 100%;
+            margin-bottom: 15px;
+        }
+        select {
+            padding: 10px;
+            font-size: 16px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            width: 100%;
+            margin-bottom: 15px;
+        }
+        #history {
+            text-align: left;
+            font-size: 18px;
+            color: #555;
+            margin-top: 20px;
+            font-weight: normal;
+        }
+        #historyList {
+            font-size: 16px;
+            color: #333;
+            font-weight: normal;
+        }
+        #timerMessage {
+            font-size: 18px;
+            color: #d9534f;
+            margin-top: 10px;
+        }
+        /* Admin Panel Styles */
+        #adminPanel {
+            display: none;
+            margin-top: 20px;
+            text-align: left;
+        }
+        #adminPanel button {
+            background-color: #007bff;
+        }
+        #remainingSourceCount {
+            font-size: 18px;
+            color: #333;
+            margin-top: 10px;
+        }
+        /* Summary Table Styles */
+        #summaryTable {
+            width: 100%;
+            margin-top: 20px;
+            border-collapse: collapse;
+            text-align: left;
+        }
+        #summaryTable th, #summaryTable td {
+            border: 1px solid #ccc;
+            padding: 8px;
+            font-size: 16px;
+        }
+        #summaryTable th {
+            background-color: #f8f8f8;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Select Random Source <b>Projectname</b></h1>
+        <div id="remainingSourceCount">Remaining Sources: 10</div>
+        <select id="teamMemberDropdown">
+            <option value="">Select a Team Member</option>
+            <!-- Add your team member options here -->
+            <option value="">Select a Team Member</option>
+            <option value="Achini">Achini</option>
+            <option value="Apsara">Apsara</option>
+            <option value="Chathurika">Chathurika</option>
+            <option value="Chrishmila">Chrishmila</option>
+            <option value="Deeshani">Deeshani</option>
+            <option value="Dilu">Dilu</option>
+            <option value="Gayathmi">Gayathmi</option>
+            <option value="Hansamali">Hansamali</option>
+            <option value="Kaushalya">Kaushalya</option>
+            <option value="Kaveen">Kaveen</option>
+            <option value="Kaveesha">Kaveesha</option>
+            <option value="Kavishka">Kavishka</option>
+            <option value="Lakshika">Lakshika</option>
+            <option value="Malsha">Malsha</option>
+            <option value="Mariya">Mariya</option>
+            <option value="Nethmi">Nethmi</option>
+            <option value="Nimeshika">Nimeshika</option>
+            <option value="Nisheth">Nisheth</option>
+            <option value="Parami">Parami</option>
+            <option value="Piumi">Piumi</option>
+            <option value="Rukshani">Rukshani</option>
+            <option value="Rumesh">Rumesh</option>
+            <option value="Rusith">Rusith</option>
+            <option value="Sarah">Sarah</option>
+            <option value="Sewmini">Sewmini</option>
+            <option value="Shainy">Shainy</option>
+            <option value="Shalini">Shalini</option>
+            <option value="Sulakshi">Sulakshi</option>
+            <option value="Sulochana">Sulochana</option>
+            <option value="Vishmi">Vishmi</option>
+            <!-- Additional team members... -->
+        </select>
+        <input type="text" id="userInput" placeholder="Password" />
+        <div id="userInputDisplay"></div>
+        <div id="result">Select Random Source</div>
+        <button id="selectButton" onclick="attemptSelection()">Proceed</button>
+
+        <!-- Admin Panel Trigger -->
+        <button id="adminButton" onclick="showAdminPanel()">Admin Panel</button>
+
+        <!-- Admin Panel -->
+        <div id="adminPanel">
+            <h3>Admin Panel</h3>
+            <button onclick="resetData()">Reset Data</button>
+            <button onclick="exportToExcel()">Export to Excel</button>
+            <button onclick="deleteLastSelection()">Delete Last Selection</button>
+            <div id="history">
+                <h3>Selection History</h3>
+                <ul id="historyList"></ul>
+            </div>
+            <!-- Summary Table -->
+            <table id="summaryTable">
+                <tr><th>Source</th><th>Assigned Team Member</th></tr>
+            </table>
+        </div>
+
+        <!-- Timer Message -->
+        <div id="timerMessage"></div>
+    </div>
+
+    <script>
+        const sourceList = [
+            "SMClark_1", "SMClark_2", "SMClark_3", "SMClark_4", "SMClark_5", 
+            "SMClark_6", "SMClark_7", "SMClark_8", "SMClark_9", "SMClark_10"
+        ];
+
+        let remainingMembers = JSON.parse(localStorage.getItem("clone1_remainingMembers")) || [...sourceList];
+        let selectedData = JSON.parse(localStorage.getItem("clone1_selectedData")) || [];
+        let timer;
+
+        window.onload = () => {
+            displayHistory();
+            updateResultText();
+            updateRemainingSourceCount();
+            updateSummaryTable();
+        };
+
+        function attemptSelection() {
+            const password = document.getElementById("userInput").value;
+            const selectedDropdown = document.getElementById("teamMemberDropdown").value;
+
+            if (password !== "" && selectedDropdown !== "") {
+                if (password === selectedDropdown) {
+                    let timeLeft = 2;
+                    document.getElementById("timerMessage").innerHTML = `Selection in ${timeLeft} seconds. <button onclick="cancelSelection()">Cancel</button>`;
+                    
+                    timer = setInterval(() => {
+                        timeLeft -= 1;
+                        document.getElementById("timerMessage").innerHTML = `Selection in ${timeLeft} seconds. <button onclick="cancelSelection()">Cancel</button>`;
+                        
+                        if (timeLeft <= 0) {
+                            clearInterval(timer);
+                            document.getElementById("timerMessage").innerHTML = "";
+                            selectRandomMember();
+                        }
+                    }, 1000);
+                } else {
+                    alert("Wrong Password!");
+                }
+            } else {
+                alert("Both fields must be filled!");
+            }
+        }
+
+        function cancelSelection() {
+            clearInterval(timer);
+            document.getElementById("timerMessage").innerHTML = "Selection canceled.";
+        }
+
+        function selectRandomMember() {
+            const userInput = document.getElementById("userInput").value;
+            const selectedDropdown = document.getElementById("teamMemberDropdown").value;
+
+            document.getElementById("userInputDisplay").innerText = userInput || "";
+
+            if (remainingMembers.length === 0) {
+                document.getElementById("result").innerText = "Source Over!";
+                document.getElementById("selectButton").disabled = true;
+                return;
+            }
+
+            const randomIndex = Math.floor(Math.random() * remainingMembers.length);
+            const selectedMember = remainingMembers[randomIndex];
+            const timestamp = new Date().toLocaleString();
+
+            document.getElementById("result").innerText = `Source: ${selectedMember}`;
+            remainingMembers.splice(randomIndex, 1);
+
+            selectedData.push({ 
+                UserInput: userInput, 
+                SelectedMember: selectedMember, 
+                Timestamp: timestamp 
+            });
+            
+            localStorage.setItem("clone1_remainingMembers", JSON.stringify(remainingMembers));
+            localStorage.setItem("clone1_selectedData", JSON.stringify(selectedData));
+
+            updateRemainingSourceCount();
+            displayHistory();
+            updateSummaryTable();
+        }
+
+        function displayHistory() {
+            const historyList = document.getElementById("historyList");
+            historyList.innerHTML = "";
+
+            selectedData.forEach(item => {
+                const li = document.createElement("li");
+                li.textContent = `${item.Timestamp} - ${item.UserInput} selected ${item.SelectedMember}`;
+                historyList.appendChild(li);
+            });
+        }
+
+        function updateResultText() {
+            if (remainingMembers.length === 0) {
+                document.getElementById("result").innerText = "Source Over!";
+                document.getElementById("selectButton").disabled = true;
+            }
+        }
+
+        function updateRemainingSourceCount() {
+            document.getElementById("remainingSourceCount").innerText = `Remaining Sources: ${remainingMembers.length}`;
+        }
+
+        function showAdminPanel() {
+            const password = prompt("Enter admin password:");
+
+            if (password === "Synet1") {
+                document.getElementById("adminPanel").style.display = "block";
+            } else {
+                alert("Incorrect password!");
+            }
+        }
+
+        function resetData() {
+            const password = prompt("Enter the password to reset data:");
+            if (password === "Synet1") {
+                if (confirm("Are you sure you want to reset the data?")) {
+                    remainingMembers = [...sourceList];
+                    selectedData = [];
+                    localStorage.removeItem("clone1_remainingMembers");
+                    localStorage.removeItem("clone1_selectedData");
+
+                    updateRemainingSourceCount();
+                    displayHistory();
+                    updateResultText();
+                    updateSummaryTable();
+                }
+            } else {
+                alert("Incorrect password!");
+            }
+        }
+
+        function deleteLastSelection() {
+    const password = prompt("Enter the password to delete the last selection:");
+    if (password === "Synet1") {
+        if (selectedData.length > 0) {
+            const lastSelection = selectedData.pop();
+            remainingMembers.push(lastSelection.SelectedMember);
+            localStorage.setItem("clone1_remainingMembers", JSON.stringify(remainingMembers));
+            localStorage.setItem("clone1_selectedData", JSON.stringify(selectedData));
+
+            updateRemainingSourceCount();
+            displayHistory();
+            updateResultText();
+            updateSummaryTable();
+        }
+    } else {
+        alert("Incorrect password!");
+    }
+}
+
+
+        function updateSummaryTable() {
+            const table = document.getElementById("summaryTable");
+            table.innerHTML = "<tr><th>Source</th><th>Assigned Team Member</th></tr>";
+
+            sourceList.forEach(source => {
+                const row = document.createElement("tr");
+                const sourceCell = document.createElement("td");
+                const assignedCell = document.createElement("td");
+
+                sourceCell.textContent = source;
+
+                const assigned = selectedData.find(item => item.SelectedMember === source);
+                assignedCell.textContent = assigned ? assigned.UserInput : "";
+
+                row.appendChild(sourceCell);
+                row.appendChild(assignedCell);
+                table.appendChild(row);
+            });
+        }
+
+        function exportToExcel() {
+            const worksheet = XLSX.utils.json_to_sheet(selectedData);
+            const workbook = XLSX.utils.book_new();
+            XLSX.utils.book_append_sheet(workbook, worksheet, "Selected Data");
+
+            XLSX.writeFile(workbook, "SelectedData.xlsx");
+        }
+    </script>
+</body>
+</html>
