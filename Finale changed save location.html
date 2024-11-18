@@ -116,7 +116,6 @@
         <select id="teamMemberDropdown">
             <option value="">Select a Team Member</option>
             <!-- Add your team member options here -->
-            <option value="">Select a Team Member</option>
             <option value="Achini">Achini</option>
             <option value="Apsara">Apsara</option>
             <option value="Chathurika">Chathurika</option>
@@ -183,8 +182,8 @@
             "SMClark_6", "SMClark_7", "SMClark_8", "SMClark_9", "SMClark_10"
         ];
 
-        let remainingMembers = JSON.parse(localStorage.getItem("clone1_remainingMembers")) || [...sourceList];
-        let selectedData = JSON.parse(localStorage.getItem("clone1_selectedData")) || [];
+        let remainingMembers = JSON.parse(localStorage.getItem("clone_remainingMembers")) || [...sourceList];
+        let selectedData = JSON.parse(localStorage.getItem("clone_selectedData")) || [];
         let timer;
 
         window.onload = () => {
@@ -251,8 +250,8 @@
                 Timestamp: timestamp 
             });
             
-            localStorage.setItem("clone1_remainingMembers", JSON.stringify(remainingMembers));
-            localStorage.setItem("clone1_selectedData", JSON.stringify(selectedData));
+            localStorage.setItem("clone_remainingMembers", JSON.stringify(remainingMembers));
+            localStorage.setItem("clone_selectedData", JSON.stringify(selectedData));
 
             updateRemainingSourceCount();
             displayHistory();
@@ -297,8 +296,8 @@
                 if (confirm("Are you sure you want to reset the data?")) {
                     remainingMembers = [...sourceList];
                     selectedData = [];
-                    localStorage.removeItem("clone1_remainingMembers");
-                    localStorage.removeItem("clone1_selectedData");
+                    localStorage.removeItem("clone_remainingMembers");
+                    localStorage.removeItem("clone_selectedData");
 
                     updateRemainingSourceCount();
                     displayHistory();
@@ -316,8 +315,8 @@
         if (selectedData.length > 0) {
             const lastSelection = selectedData.pop();
             remainingMembers.push(lastSelection.SelectedMember);
-            localStorage.setItem("clone1_remainingMembers", JSON.stringify(remainingMembers));
-            localStorage.setItem("clone1_selectedData", JSON.stringify(selectedData));
+            localStorage.setItem("clone_remainingMembers", JSON.stringify(remainingMembers));
+            localStorage.setItem("clone_selectedData", JSON.stringify(selectedData));
 
             updateRemainingSourceCount();
             displayHistory();
