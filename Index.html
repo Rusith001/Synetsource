@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Status Panel</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/tabletop.js/1.6.0/tabletop.min.js"></script>
+<style>
+    body { font-family: 'Segoe UI', sans-serif; background: #f0f4f8; padding: 20px; }
+    h1 { color: #667eea; margin-bottom: 20px; }
+    .tiles-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)); gap: 10px; }
+    .tile { padding: 12px; border-radius: 8px; text-align: center; font-weight: 600; color: white; }
+    .available { background: #10b981; }
+    .occupied { background: #ef4444; }
+    .unavailable { background: #9ca3af; }
+    button { padding: 10px 20px; margin-bottom: 20px; border: none; border-radius: 6px; background: #667eea; color: white; cursor: pointer; }
+</style>
+</head>
+<body>
+
+<h1>🏢 Status Panel</h1>
+<button onclick="loadData()">🔄 Refresh Data</button>
+<div class="tiles-grid" id="tilesGrid"></div>
+
+<script>
+const SHEET_ID = 'YOUR_SHEET_ID'; // replace with your Google Sheet ID
+
+function loadData() {
+    Tabletop.init({
+        key: SHEET_ID,
+        simpleSheet: true,
+        callback: function(data) {
+            renderTiles(data);
+        },
+        wanted: []
+    });
+}
+
+function renderTiles(data) {
+    // Sort naturally by Name (e.g., 1,2,10,11)
+    data.sort((a,b)=>naturalCompare(a.Name, b.Name));
+
+    const grid = document.getElementById('tilesGrid');
+    grid.innerHTML = '';
+    data.forEach(item => {
+        const div = document.createElement('div');
+        div.className = 'tile ' + (item.Status || 'unavailable').toLowerCase();
+        div.textContent = `${item.Name}\n${item.Status || 'Unavailable'}`;
+        grid.appendChild(div);
+    });
+}
+
+// Natural sort function
+function naturalCompare(a, b) {
+    const ax = [], bx = [];
+    a.replace(/(\d+)|(\D+)/g, (_, $1, $2) => { ax.push([$1||Infinity, $2||""]); });
+    b.replace(/(\d+)|(\D+)/g, (_, $1, $2) => { bx.push([$1||Infinity, $2||""]); });
+    while(ax.length && bx.length){
+        const an = ax.shift();
+        const bn = bx.shift();
+        const nn = (an[0]-bn[0]) || an[1].localeCompare(bn[1]);
+        if(nn) return nn;
+    }
+    return ax.length - bx.length;
+}
+
+// Load on page load
+window.addEventListener('DOMContentLoaded', loadData);
+</script>
+
+</body>
+</html>
