@@ -1,118 +1,72 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Random Source Selector</title>
-    <script src="https://www.gstatic.com/firebasejs/9.17.2/firebase-app.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.17.2/firebase-database.js"></script>
-    <style>
-        body {
-            font-family: Arial, sans-serif;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            min-height: 100vh;
-            margin: 0;
-            background-color: #f0f0f0;
-        }
-        .container {
-            text-align: center;
-            max-width: 400px;
-            padding: 20px;
-            background-color: #fff;
-            border-radius: 8px;
-            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
-        }
-        #result, #history {
-            margin-top: 20px;
-        }
-    </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Status Panel</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/tabletop.js/1.6.0/tabletop.min.js"></script>
+<style>
+    body { font-family: 'Segoe UI', sans-serif; background: #f0f4f8; padding: 20px; }
+    h1 { color: #667eea; margin-bottom: 20px; }
+    .tiles-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)); gap: 10px; }
+    .tile { padding: 12px; border-radius: 8px; text-align: center; font-weight: 600; color: white; }
+    .available { background: #10b981; }
+    .occupied { background: #ef4444; }
+    .unavailable { background: #9ca3af; }
+    button { padding: 10px 20px; margin-bottom: 20px; border: none; border-radius: 6px; background: #667eea; color: white; cursor: pointer; }
+</style>
 </head>
 <body>
-    <div class="container">
-        <h1>Random Source Selector</h1>
-        <select id="teamMemberDropdown">
-            <option value="">Select a Team Member</option>
-            <option value="Achini">Achini</option>
-            <option value="Apsara">Apsara</option>
-            <option value="Chathurika">Chathurika</option>
-        </select>
-        <input type="text" id="userInput" placeholder="Enter Password" />
-        <button onclick="selectRandom()">Proceed</button>
-        <div id="result">Result: None</div>
-        <div id="history">
-            <h2>Selection History</h2>
-            <ul id="historyList"></ul>
-        </div>
-    </div>
 
-    <script>
-        // Firebase Configuration
-        const firebaseConfig = {
-            apiKey: "AIzaSyBgaBYbbVVesErHbRqdVvZgLfhh6W7dZCQ",
-            authDomain: "synet-source-data-base.firebaseapp.com",
-            databaseURL: "https://synet-source-data-base-default-rtdb.firebaseio.com",
-            projectId: "synet-source-data-base",
-            storageBucket: "synet-source-data-base.appspot.com",
-            messagingSenderId: "813155849819",
-            appId: "1:813155849819:web:1f1d1c406424255e4b917e"
-        };
+<h1>🏢 Status Panel</h1>
+<button onclick="loadData()">🔄 Refresh Data</button>
+<div class="tiles-grid" id="tilesGrid"></div>
 
-        // Initialize Firebase
-        const app = firebase.initializeApp(firebaseConfig);
-        const db = firebase.database();
+<script>
+const SHEET_ID = 'YOUR_SHEET_ID'; // replace with your Google Sheet ID
 
-        const sources = ["SMClark_1", "SMClark_2", "SMClark_3"];
-        let remainingSources = [...sources];
+function loadData() {
+    Tabletop.init({
+        key: SHEET_ID,
+        simpleSheet: true,
+        callback: function(data) {
+            renderTiles(data);
+        },
+        wanted: []
+    });
+}
 
-        // Function to select a random source
-        function selectRandom() {
-            const userInput = document.getElementById("userInput").value;
-            const teamMember = document.getElementById("teamMemberDropdown").value;
+function renderTiles(data) {
+    // Sort naturally by Name (e.g., 1,2,10,11)
+    data.sort((a,b)=>naturalCompare(a.Name, b.Name));
 
-            if (!userInput || !teamMember) {
-                alert("Please fill in all fields!");
-                return;
-            }
+    const grid = document.getElementById('tilesGrid');
+    grid.innerHTML = '';
+    data.forEach(item => {
+        const div = document.createElement('div');
+        div.className = 'tile ' + (item.Status || 'unavailable').toLowerCase();
+        div.textContent = `${item.Name}\n${item.Status || 'Unavailable'}`;
+        grid.appendChild(div);
+    });
+}
 
-            if (remainingSources.length === 0) {
-                document.getElementById("result").innerText = "No more sources available!";
-                return;
-            }
+// Natural sort function
+function naturalCompare(a, b) {
+    const ax = [], bx = [];
+    a.replace(/(\d+)|(\D+)/g, (_, $1, $2) => { ax.push([$1||Infinity, $2||""]); });
+    b.replace(/(\d+)|(\D+)/g, (_, $1, $2) => { bx.push([$1||Infinity, $2||""]); });
+    while(ax.length && bx.length){
+        const an = ax.shift();
+        const bn = bx.shift();
+        const nn = (an[0]-bn[0]) || an[1].localeCompare(bn[1]);
+        if(nn) return nn;
+    }
+    return ax.length - bx.length;
+}
 
-            const randomIndex = Math.floor(Math.random() * remainingSources.length);
-            const selectedSource = remainingSources.splice(randomIndex, 1)[0];
+// Load on page load
+window.addEventListener('DOMContentLoaded', loadData);
+</script>
 
-            // Save to Firebase
-            const timestamp = new Date().toISOString();
-            const entry = { teamMember, selectedSource, timestamp };
-
-            firebase.database().ref("selections").push(entry).then(() => {
-                document.getElementById("result").innerText = `Selected: ${selectedSource}`;
-                fetchHistory(); // Refresh the history
-            });
-        }
-
-        // Function to fetch and display history
-        function fetchHistory() {
-            firebase.database().ref("selections").get().then((snapshot) => {
-                const historyList = document.getElementById("historyList");
-                historyList.innerHTML = "";
-
-                if (snapshot.exists()) {
-                    const data = snapshot.val();
-                    Object.values(data).forEach((entry) => {
-                        const li = document.createElement("li");
-                        li.innerText = `${entry.timestamp} - ${entry.teamMember}: ${entry.selectedSource}`;
-                        historyList.appendChild(li);
-                    });
-                }
-            });
-        }
-
-        // Load history on page load
-        window.onload = fetchHistory;
-    </script>
 </body>
 </html>
